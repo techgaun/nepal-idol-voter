@@ -46,12 +46,13 @@ def verify_vote(email):
 
             if mail.ok:
                 mail_soup = BS(mail.content, 'html.parser')
-                email_url = mail_soup.select(
-                    'a[href=^="http://ap1.tv/nepalIdol/verifyEmailVoting"]')[
-                        'href']
-                r_verify = requests.get(email_url)
-                if not r_verify.ok:
-                    print("Verifying {} failed".format(email_url))
+                idol_email = mail_soup.select(
+                    'a[href=^="http://ap1.tv/nepalIdol/verifyEmailVoting"]')
+                if idol_email:
+                    email_url = idol_email['href']
+                    r_verify = requests.get(email_url)
+                    if not r_verify.ok:
+                        print("Verifying {} failed".format(email_url))
     else:
         print("Fetching inbox for {} failed".format(email))
 
