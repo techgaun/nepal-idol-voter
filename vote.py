@@ -2,13 +2,18 @@
 
 import asyncio
 import requests
+from bs4 import BeautifulSoup as BS
+
+provider = "mailnesia.com"
+email_title = "Nepal Idol Voting"
+email_title = "Hi"
 
 
 def do_vote(name, email, country, contestant_id, contestant_name):
     payload = dict(
         name=name, email=email, country=country, contestant_id=contestant_id)
     r = requests.post('http://ap1.tv/nepalIdol/api/emailVoting', data=payload)
-    print(r.text)
+    # print(r.text)
     if r.ok:
         response = r.json()
         assert response['status']
@@ -19,13 +24,49 @@ def do_vote(name, email, country, contestant_id, contestant_name):
     return False
 
 
-async def run(name, email, country, contestant_id, contestant_name):
+def verify_vote(email):
+    print("Verifying all e-mails for {}".format(email))
+    inbox_url = "http://mailnesia.com/mailbox/{}?newerthan=1309034087&noheadernofooter=1".format(
+        email)
+    inbox = requests.get(inbox_url)
+    #  print(inbox.text)
+
+    if inbox.ok:
+        soup = BS(inbox.content, 'html.parser')
+        emails = soup.select("tr.emailheader")
+        idol_emails = [
+            idol_email['id'] for idol_email in emails
+            if email_title in idol_email.text
+        ]
+
+        for mail_id in idol_emails:
+            mail_url = "http://mailnesia.com/mailbox/usa/{}?noheadernofooter=ajax".format(
+                mail_id)
+            mail = requests.get(mail_url)
+
+            if mail.ok:
+                mail_soup = BS(mail.content, 'html.parser')
+                email_url = mail_soup.select(
+                    'a[href=^="http://ap1.tv/nepalIdol/verifyEmailVoting"]')[
+                        'href']
+                r_verify = requests.get(email_url)
+                if not r_verify.ok:
+                    print("Verifying {} failed".format(email_url))
+    else:
+        print("Fetching inbox for {} failed".format(email))
+
+
+async def run(name, country, contestant_id, contestant_name):
+    name = name.lower()
+    email = "{}@{}".format(name, provider)
     print("{} voting with email {} for {} : {}".format(
         name, email, contestant_name, contestant_id))
-    if do_vote(name, email, country, contestant_id, contestant_name):
-        print('E-mail sent for verification')
+    while do_vote(name, email, country, contestant_id, contestant_name):
+        print('E-mail sent for verification for {}'.format(email))
     else:
-        print('E-mail limit reached')
+        print('E-mail limit reached for {}'.format(email))
+
+    verify_vote(name)
 
 
 async def run_all(word_file, country, contestant_id, contestant_name):
@@ -33,9 +74,8 @@ async def run_all(word_file, country, contestant_id, contestant_name):
         names = f.read().splitlines()
         tasks = [
             asyncio.ensure_future(
-                run(name,
-                    name.lower() + '@yopmail.com', country, contestant_id,
-                    contestant_name)) for name in names
+                run(name, country, contestant_id, contestant_name))
+            for name in names
         ]
         await asyncio.wait(tasks)
 
