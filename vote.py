@@ -6,14 +6,13 @@ from bs4 import BeautifulSoup as BS
 
 provider = "mailnesia.com"
 email_title = "Nepal Idol Voting"
-email_title = "Hi"
 
 
 def do_vote(name, email, country, contestant_id, contestant_name):
     payload = dict(
         name=name, email=email, country=country, contestant_id=contestant_id)
     r = requests.post('http://ap1.tv/nepalIdol/api/emailVoting', data=payload)
-    # print(r.text)
+    print(r.text)
     if r.ok:
         response = r.json()
         assert response['status']
@@ -29,7 +28,7 @@ def verify_vote(email):
     inbox_url = "http://mailnesia.com/mailbox/{}?newerthan=1309034087&noheadernofooter=1".format(
         email)
     inbox = requests.get(inbox_url)
-    #  print(inbox.text)
+    # print(inbox.text)
 
     if inbox.ok:
         soup = BS(inbox.content, 'html.parser')
