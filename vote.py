@@ -11,7 +11,7 @@ email_title = "Nepal Idol Voting"
 def do_vote(name, email, country, contestant_id, contestant_name):
     payload = dict(
         name=name, email=email, country=country, contestant_id=contestant_id)
-    r = requests.post('http://ap1.tv/nepalIdol/api/emailVoting', data=payload)
+    r = requests.post('https://nepalidol.ap1.tv/nepalIdol/api/emailVoting', data=payload)
     print(r.text)
     if r.ok:
         response = r.json()
@@ -46,7 +46,7 @@ def verify_vote(email):
             if mail.ok:
                 mail_soup = BS(mail.content, 'html.parser')
                 idol_email = mail_soup.select(
-                    'a[href=^="http://ap1.tv/nepalIdol/verifyEmailVoting"]')
+                    'a[href=^="https://nepalidol.ap1.tv/nepalIdol/verifyEmailVoting"]')
                 if idol_email:
                     email_url = idol_email['href']
                     r_verify = requests.get(email_url)
